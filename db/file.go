@@ -1,14 +1,15 @@
-package mysql
+package db
 
 import (
 	"database/sql"
 	"fmt"
+	"zmd_package/db/mysql"
 )
 
 
 //文件上传完成
 func OnFileUploadFinished(filehash string, filename string, filesize int64, fileaddr string) bool {
-	stmt, err := DBConn().Prepare(
+	stmt, err := mysql.DBConn().Prepare(
 		"insert ignore into tbl_file (`file_sha1`,`file_name`,`file_size`," +
 			"`file_addr`,`status`) values (?,?,?,?,1)")
 	if err!=nil{
@@ -40,7 +41,7 @@ type TableFile struct {
 
 //从mysql获取文件信息
 func GetFileMeta(filehash string) (*TableFile,error) {
-	stmt, err := DBConn().Prepare("select file_sha1,file_addr,file_name,file_size from tbl_file where file_sha1=? and status=1 limit 1")
+	stmt, err := mysql.DBConn().Prepare("select file_sha1,file_addr,file_name,file_size from tbl_file where file_sha1=? and status=1 limit 1")
 	if err!=nil{
 		fmt.Println(err.Error())
 		return nil,err
@@ -53,5 +54,5 @@ func GetFileMeta(filehash string) (*TableFile,error) {
 		fmt.Println(err.Error())
 		return nil, err
 	}
-
+	return &tfile, nil
 }

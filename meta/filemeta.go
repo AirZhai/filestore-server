@@ -1,7 +1,7 @@
 package meta
 
 import (
-	mydb "zmd_package/db/mysql"
+	"zmd_package/db"
 )
 
 //文件元信息结构
@@ -26,7 +26,7 @@ func UpdateFileMeta(fmeta FileMeta)  {
 
 //新增/更新文件
 func UpdateFileMetaDB(fmeta FileMeta) bool {
-	return mydb.OnFileUploadFinished(fmeta.FileSha1,fmeta.FileName,fmeta.FileSize,fmeta.Location)
+	return db.OnFileUploadFinished(fmeta.FileSha1,fmeta.FileName,fmeta.FileSize,fmeta.Location)
 }
 
 //通过sha1获取文件的元信息对象
@@ -40,7 +40,7 @@ func RemoveFileMeta(fileSha1 string){
 }
 //从mysql获取文件信息
 func GetFileMetaDB(fileSha1 string) (FileMeta,error) {
-	tfile, err := mydb.GetFileMeta(fileSha1)
+	tfile, err := db.GetFileMeta(fileSha1)
 	if err !=nil{
 		return FileMeta{}, err
 	}
