@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 	dblayer "zmd_package/db"
 	"zmd_package/util"
 )
@@ -38,4 +40,31 @@ func SignupHandler(w http.ResponseWriter, r *http.Request)  {
 	}else {
 		w.Write([]byte("FAILED"))
 	}
+}
+
+//登录接口
+func SignInHandler(w http.ResponseWriter, r *http.Request)  {
+	r.ParseForm()
+	username := r.Form.Get("username")
+	password := r.Form.Get("password")
+	encPasswd := util.Sha1([]byte(password+pwd_salt))
+	pwdChecked := dblayer.UserSignin(username, encPasswd)
+	if !pwdChecked{
+		w.Write([]byte("FAILED"))
+		return
+	}
+	token := GenToken(username)
+	upRes := dblayer.UpdateToken(username, token)
+	if !upRes{
+		w.Write([]byte("FAILED"))
+		return
+	}
+
+	w.Write([]byte("http://"+r.Host+"/static/view/home.html"))
+}
+
+func GenToken(username string) string {
+	ts := fmt.Sprintf("%x", time.Now().Unix())
+	tokenPrefix := util.MD5([]byte(username+ts+"_tokensalt"))
+	return tokenPrefix + ts[:8]
 }
