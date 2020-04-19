@@ -60,11 +60,64 @@ func SignInHandler(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	w.Write([]byte("http://"+r.Host+"/static/view/home.html"))
+	//w.Write([]byte("http://"+r.Host+"/static/view/home.html"))
+	resp := util.RespMsg{
+		Code: 0,
+		Msg:  "OK",
+		Data: struct {
+			Location string
+			Username string
+			Token string
+		}{
+			Location:"http://"+r.Host+"/static/view/home.html",
+			Username:username,
+			Token:token,
+		},
+	}
+	w.Write(resp.JSONBytes())
 }
 
 func GenToken(username string) string {
 	ts := fmt.Sprintf("%x", time.Now().Unix())
 	tokenPrefix := util.MD5([]byte(username+ts+"_tokensalt"))
 	return tokenPrefix + ts[:8]
+}
+
+//查询用户信息
+func UserInfoHandler(w http.ResponseWriter, r * http.Request)  {
+	r.ParseForm()
+	username := r.Form.Get("username")
+	token := r.Form.Get("token")
+
+	isValidToken := IsTokenValid(username, token)
+	if !isValidToken{
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	user, err:=dblayer.GetUserInfo(username)
+	if err !=nil{
+		fmt.Println(err.Error())
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	resp := util.RespMsg{
+		Code: 0,
+		Msg:  "OK",
+		Data: user,
+	}
+	w.Write(resp.JSONBytes())
+}
+
+func IsTokenValid(username string, token string) bool {
+	DBToken, err := dblayer.GetUserToken(username)
+	if err != nil{
+		fmt.Println(err.Error())
+		return false
+	}
+
+	if token == DBToken {
+		return true
+	}
+	return false
 }

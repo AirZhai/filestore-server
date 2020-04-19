@@ -5,6 +5,14 @@ import (
 	mydb "zmd_package/db/mysql"
 )
 
+type User struct {
+	Username     string
+	Email        string
+	Phone        string
+	SignupAt     string
+	LastActiveAt string
+	Status       int
+}
 
 //通过用户名及密码完成user表的注册操作
 func UserSignup(username string, passwd string) bool {
@@ -65,4 +73,41 @@ func UpdateToken(username string, token string) bool {
 		return false
 	}
 	return true
+}
+
+func GetUserToken(username string) (string,error) {
+	stmt, err := mydb.DBConn().Prepare("select user_token from tbl_user_token where user_name=? limit 1")
+	if err != nil{
+		fmt.Println(err.Error())
+		return "", err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(username)
+	if err != nil{
+		fmt.Println(err.Error())
+		return "",err
+	}
+	token := ""
+	for rows.Next(){
+		rows.Scan(&token)
+	}
+	return token, nil
+}
+
+func GetUserInfo(username string) (User, error) {
+	user := User{}
+	stmt, err := mydb.DBConn().Prepare("select user_name,signup_at from tbl_user where user_name=? limit 1")
+	if err!=nil{
+		fmt.Println(err.Error())
+		return user, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(username).Scan(&user.Username, &user.SignupAt)
+	if err != nil{
+		fmt.Println(err.Error())
+		return user, err
+	}
+	return user,nil
 }
