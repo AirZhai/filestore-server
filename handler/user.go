@@ -87,13 +87,13 @@ func GenToken(username string) string {
 func UserInfoHandler(w http.ResponseWriter, r * http.Request)  {
 	r.ParseForm()
 	username := r.Form.Get("username")
-	token := r.Form.Get("token")
-
-	isValidToken := IsTokenValid(username, token)
-	if !isValidToken{
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
+	//token := r.Form.Get("token")
+	//
+	//isValidToken := IsTokenValid(username, token)
+	//if !isValidToken{
+	//	w.WriteHeader(http.StatusForbidden)
+	//	return
+	//}
 
 	user, err:=dblayer.GetUserInfo(username)
 	if err !=nil{
