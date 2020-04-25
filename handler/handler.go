@@ -7,9 +7,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 	"zmd_package/meta"
 	"zmd_package/util"
+	dblayer "zmd_package/db"
 )
 
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -49,13 +51,22 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		//meta.UpdateFileMeta(fileMeat)
 		meta.UpdateFileMetaDB(fileMeat)
 
-		fileMeat.FileSize, err = io.Copy(newFile, file)
-		if err != nil {
-			fmt.Printf("failed to save data into file, err:%s", err.Error())
-			return
+		r.ParseForm()
+		username := r.Form.Get("username")
+		suc := dblayer.OnUserFileUploadFinished(username, fileMeat.FileSha1, fileMeat.FileName, fileMeat.FileSize)
+		if suc{
+			http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
+		}else {
+			w.Write([]byte("Upload Failed."))
 		}
 
-		http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
+		//fileMeat.FileSize, err = io.Copy(newFile, file)
+		//if err != nil {
+		//	fmt.Printf("failed to save data into file, err:%s", err.Error())
+		//	return
+		//}
+		//
+		//http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
 
 	}
 }
@@ -79,6 +90,24 @@ func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	data, err := json.Marshal(fmeta)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(data)
+}
+
+func FileQueryHandler(w http.ResponseWriter, r http.Request)  {
+	r.ParseForm()
+
+	limitCnt, _ := strconv.Atoi(r.Form.Get("limit"))
+	username := r.Form.Get("username")
+	userFiles, err := dblayer.QueryUserFileMetas(username, limitCnt)
+	if err!=nil{
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	data, err := json.Marshal(userFiles)
+	if err!=nil{
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
